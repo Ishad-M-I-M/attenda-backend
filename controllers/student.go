@@ -9,7 +9,23 @@ import (
 
 func GetStudents(c *gin.Context) {
 	var students []models.Student
-	result := db.DB.Find(&students)
+
+	var d = db.DB
+	if name := c.Query("name"); name != "" {
+		d = d.Where("name LIKE ?", "%"+name+"%")
+	}
+	if grade := c.Query("grade"); grade != "" {
+		d = d.Where("grade = ?", grade)
+	}
+	if medium := c.Query("medium"); medium != "" {
+		d = d.Where("medium = ?", medium)
+	}
+	if gender := c.Query("gender"); gender != "" {
+		d = d.Where("gender = ?", gender)
+	}
+
+	result := d.Find(&students)
+
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": result.Error.Error(),
