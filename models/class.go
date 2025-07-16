@@ -4,9 +4,9 @@ import "gorm.io/gorm"
 
 type Class struct {
 	gorm.Model
-	Name        string  `json:"name" gorm:"not null"`
+	Name        string  `json:"name" gorm:"not null;unique"`
 	Description string  `json:"description"`
-	TeacherId   uint    `json:"teacher_id"`
+	TeacherId   uint    `json:"teacher_id" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Teacher     Teacher `json:"teacher" gorm:"foreignKey:TeacherId"`
 
 	StudentClasses []StudentClass `gorm:"foreignKey:ClassId"`

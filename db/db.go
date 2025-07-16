@@ -16,7 +16,9 @@ func Connect() error {
 		return err
 	}
 
-	err = DB.AutoMigrate(&models.Student{}, &models.Teacher{})
+	// Enable foreign key constraints
+	DB.Exec("PRAGMA foreign_keys = ON")
+	err = DB.AutoMigrate(&models.Student{}, &models.Teacher{}, &models.Class{}, &models.StudentClass{}, &models.DefaultClass{})
 	if err != nil {
 		return err
 	}

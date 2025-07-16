@@ -8,3 +8,7 @@ type Teacher struct {
 	Gender Gender `json:"gender" gorm:"not null"`
 	Mobile string `json:"mobile" gorm:"not null"`
 }
+
+func (Teacher) TableName() string {
+	return "teachers"
+}

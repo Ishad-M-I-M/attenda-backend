@@ -26,7 +26,7 @@ type Student struct {
 	Mobile     string `json:"mobile" gorm:"not null"`
 	FatherName string `json:"father_name"`
 
-	StudentClasses []StudentClass `gorm:"foreignKey:ClassId"`
+	StudentClasses []StudentClass `gorm:"foreignKey:StudentId"`
 }
 
 func (Student) TableName() string {

@@ -33,5 +33,11 @@ func main() {
 		teachersRoutes.POST("/", controllers.CreateTeacher)
 	}
 
+	classRoutes := router.Group("/classes")
+	{
+		classRoutes.GET("/", controllers.GetClasses)
+		classRoutes.POST("/", controllers.CreateClass)
+	}
+
 	router.Run()
 }
