@@ -20,13 +20,16 @@ func CreateClass(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
 		return
 	}
+
+	db.DB.Preload("Teacher").First(&class, class.ID)
+
 	c.JSON(http.StatusOK, class)
 }
 
 func GetClasses(c *gin.Context) {
 	var classes []models.Class
 
-	result := db.DB.Find(&classes)
+	result := db.DB.Preload("Teacher").Find(&classes)
 
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

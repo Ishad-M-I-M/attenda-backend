@@ -9,7 +9,7 @@ type Class struct {
 	TeacherId   uint    `json:"teacher_id" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Teacher     Teacher `json:"teacher" gorm:"foreignKey:TeacherId"`
 
-	StudentClasses []StudentClass `gorm:"foreignKey:ClassId"`
+	StudentClasses []StudentClass `json:"-" gorm:"foreignKey:ClassId"`
 }
 
 func (Class) TableName() string {
