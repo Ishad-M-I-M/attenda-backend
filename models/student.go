@@ -25,6 +25,8 @@ type Student struct {
 	Address    string `json:"address"`
 	Mobile     string `json:"mobile" gorm:"not null"`
 	FatherName string `json:"father_name"`
+
+	StudentClasses []StudentClass `gorm:"foreignKey:ClassId"`
 }
 
 func (Student) TableName() string {
