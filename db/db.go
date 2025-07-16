@@ -16,7 +16,7 @@ func Connect() error {
 		return err
 	}
 
-	err = DB.AutoMigrate(&models.Student{})
+	err = DB.AutoMigrate(&models.Student{}, &models.Teacher{})
 	if err != nil {
 		return err
 	}

@@ -27,5 +27,11 @@ func main() {
 		studentRoutes.POST("/", controllers.CreateStudent)
 	}
 
+	teachersRoutes := router.Group("/teachers")
+	{
+		teachersRoutes.GET("/", controllers.GetTeacher)
+		teachersRoutes.POST("/", controllers.CreateTeacher)
+	}
+
 	router.Run()
 }
