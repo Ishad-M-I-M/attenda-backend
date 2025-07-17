@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"attenda_backend/db"
+	"attenda_backend/dtos"
 	"attenda_backend/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 func GetStudents(c *gin.Context) {
@@ -74,4 +76,61 @@ func assignStudentToDefaultClass(student *models.Student) {
 		}
 		db.DB.Create(&studentClass)
 	}
+}
+
+func GetStudentAttendance(c *gin.Context) {
+	studentId := c.Query("student_id")
+	classId := c.Query("class_id")
+	limit := c.Query("limit")
+	if studentId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "student_id is required"})
+		return
+	}
+
+	d := db.DB.Where("student_id = ?", studentId)
+
+	if classId != "" {
+		d = d.Where("class_id = ?", classId)
+	}
+
+	if limit != "" {
+		limitInt, err := strconv.Atoi(limit)
+		if err != nil || limitInt <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be a positive integer"})
+			return
+		}
+		d = d.Limit(limitInt)
+	}
+
+	var attendance []models.Attendance
+	result := d.Order("date DESC").
+		Preload("Student").
+		Preload("Class").
+		Find(&attendance)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": result.Error.Error(),
+		})
+		return
+	}
+
+	if len(attendance) == 0 {
+		c.JSON(http.StatusNoContent, gin.H{})
+		return
+	}
+
+	studentAttendace := dtos.StudentAttendance{}
+	studentAttendace.StudentId = attendance[0].StudentId
+	studentAttendace.StudentName = attendance[0].Student.Name
+
+	for _, att := range attendance {
+		studentAttendace.Records = append(studentAttendace.Records, dtos.AttendanceRecord{
+			ClassId:   att.ClassId,
+			ClassName: att.Class.Name,
+			Date:      dtos.DateOnlyFromTime(att.Date),
+		})
+	}
+
+	c.JSON(http.StatusOK, studentAttendace)
 }

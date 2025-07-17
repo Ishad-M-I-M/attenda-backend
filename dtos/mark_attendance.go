@@ -18,6 +18,10 @@ func (d *DateOnly) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func DateOnlyFromTime(t time.Time) DateOnly {
+	return DateOnly{Time: t}
+}
+
 type MarkAttendance struct {
 	Date       DateOnly `json:"date"`
 	ClassId    uint     `json:"class_id"`
