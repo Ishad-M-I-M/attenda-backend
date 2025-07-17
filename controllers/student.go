@@ -48,5 +48,30 @@ func CreateStudent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
 		return
 	}
+	assignStudentToDefaultClass(&student)
 	c.JSON(http.StatusOK, student)
+}
+
+func assignStudentToDefaultClass(student *models.Student) {
+	// Assign student to the default class (If a default class exists) based on the details
+	var defaultClasses []models.DefaultClass
+	db.DB.Find(&defaultClasses, "grade = ? AND medium = ?", student.Grade, student.Medium)
+
+	var classId uint
+	if len(defaultClasses) > 0 {
+		for _, defaultClass := range defaultClasses {
+			if student.Gender == defaultClass.Gender || defaultClass.Gender == "mixed" {
+				classId = defaultClass.ClassId
+				break
+			}
+		}
+	}
+
+	if classId > 0 {
+		studentClass := models.StudentClass{
+			StudentId: student.ID,
+			ClassId:   classId,
+		}
+		db.DB.Create(&studentClass)
+	}
 }

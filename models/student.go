@@ -14,6 +14,7 @@ type Gender string
 const (
 	Male   Gender = "male"
 	Female Gender = "female"
+	Mixed  Gender = "mixed"
 )
 
 type Student struct {
@@ -26,7 +27,7 @@ type Student struct {
 	Mobile     string `json:"mobile" gorm:"not null"`
 	FatherName string `json:"father_name"`
 
-	StudentClasses []StudentClass `gorm:"foreignKey:StudentId"`
+	StudentClasses []StudentClass `json:"-" gorm:"foreignKey:StudentId"`
 }
 
 func (Student) TableName() string {
