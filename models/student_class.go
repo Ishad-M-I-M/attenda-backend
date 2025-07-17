@@ -7,8 +7,8 @@ type StudentClass struct {
 	ClassId    uint      `json:"class_id" gorm:"primaryKey;not null"`
 	EnrolledAt time.Time `json:"enrolled_at" gorm:"default:CURRENT_TIMESTAMP"`
 
-	Student Student `gorm:"foreignKey:StudentId"`
-	Class   Class   `gorm:"foreignKey:ClassId"`
+	Student Student `json:"-" gorm:"foreignKey:StudentId"`
+	Class   Class   `json:"-" gorm:"foreignKey:ClassId"`
 }
 
 func (StudentClass) TableName() string {

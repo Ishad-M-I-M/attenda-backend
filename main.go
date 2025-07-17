@@ -21,6 +21,8 @@ func main() {
 		})
 	})
 
+	router.POST("/assign", controllers.Assign)
+
 	studentRoutes := router.Group("/students")
 	{
 		studentRoutes.GET("/", controllers.GetStudents)
