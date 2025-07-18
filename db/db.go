@@ -2,9 +2,10 @@ package db
 
 import (
 	"attenda_backend/models"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"os"
 )
 
 var DB *gorm.DB
@@ -12,7 +13,7 @@ var DB *gorm.DB
 func Connect() error {
 	var err error
 
-	DB, err = gorm.Open(sqlite.Open("temp.db"), &gorm.Config{
+	DB, err = gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
