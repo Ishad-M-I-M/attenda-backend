@@ -76,7 +76,7 @@ func GetAttendance(c *gin.Context) {
 	classAttendance.ClassId = studentclasses[0].ClassId
 	classAttendance.ClassName = studentclasses[0].Class.Name
 	parsedDate, _ := time.Parse("2006-01-02", date)
-	classAttendance.Date = parsedDate
+	classAttendance.Date = dtos.DateOnlyFromTime(parsedDate)
 
 	attendedStudentIds := map[uint]struct{}{}
 	for _, a := range attendance {
@@ -97,4 +97,33 @@ func GetAttendance(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, classAttendance)
+}
+
+func MarkClassAttendance(c *gin.Context) {
+	var markAttendance dtos.ClassAttendance
+
+	if err := c.ShouldBindJSON(&markAttendance); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var attendance []models.Attendance
+	for _, student := range markAttendance.Students {
+		if !student.Present {
+			continue
+		}
+		attendance = append(attendance, models.Attendance{
+			StudentId: student.StudentId,
+			ClassId:   markAttendance.ClassId,
+			Date:      markAttendance.Date.Time,
+		})
+	}
+
+	result := db.DB.Create(&attendance)
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, markAttendance)
 }
