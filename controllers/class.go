@@ -6,6 +6,7 @@ import (
 	"attenda_backend/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 func CreateClass(c *gin.Context) {
@@ -63,7 +64,7 @@ func GetAttendance(c *gin.Context) {
 	}
 
 	var studentclasses []models.StudentClass
-	result = db.DB.Preload("Student").Find(&studentclasses, "class_id = ?", classId)
+	result = db.DB.Preload("Class").Preload("Student").Find(&studentclasses, "class_id = ?", classId)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": result.Error.Error(),
@@ -72,9 +73,10 @@ func GetAttendance(c *gin.Context) {
 	}
 
 	classAttendance := dtos.ClassAttendance{}
-	classAttendance.ClassId = attendance[0].ClassId
-	classAttendance.ClassName = attendance[0].Class.Name
-	classAttendance.Date = attendance[0].Date
+	classAttendance.ClassId = studentclasses[0].ClassId
+	classAttendance.ClassName = studentclasses[0].Class.Name
+	parsedDate, _ := time.Parse("2006-01-02", date)
+	classAttendance.Date = parsedDate
 
 	attendedStudentIds := map[uint]struct{}{}
 	for _, a := range attendance {
