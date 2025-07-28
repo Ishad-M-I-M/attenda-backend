@@ -5,6 +5,7 @@ import (
 	"attenda_backend/dtos"
 	"attenda_backend/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm/clause"
 	"net/http"
 	"time"
 )
@@ -119,7 +120,10 @@ func MarkClassAttendance(c *gin.Context) {
 		})
 	}
 
-	result := db.DB.Create(&attendance)
+	result := db.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "student_id"}, {Name: "class_id"}, {Name: "date"}},
+		UpdateAll: true,
+	}).Create(&attendance)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
 		return
