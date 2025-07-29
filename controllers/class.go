@@ -77,7 +77,7 @@ func GetAttendance(c *gin.Context) {
 	classAttendance.ClassId = studentclasses[0].ClassId
 	classAttendance.ClassName = studentclasses[0].Class.Name
 	parsedDate, _ := time.Parse("2006-01-02", date)
-	classAttendance.Date = dtos.DateOnlyFromTime(parsedDate)
+	classAttendance.Date = parsedDate
 
 	attendedStudentIds := map[uint]struct{}{}
 	for _, a := range attendance {
@@ -116,7 +116,7 @@ func MarkClassAttendance(c *gin.Context) {
 		attendance = append(attendance, models.Attendance{
 			StudentId: student.StudentId,
 			ClassId:   markAttendance.ClassId,
-			Date:      markAttendance.Date.Time,
+			Date:      markAttendance.Date,
 		})
 	}
 
