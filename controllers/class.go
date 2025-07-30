@@ -108,6 +108,14 @@ func MarkClassAttendance(c *gin.Context) {
 		return
 	}
 
+	// delete existing attendance records for the class and date
+	result := db.DB.Where("class_id = ? AND date = ?", markAttendance.ClassId, markAttendance.Date).
+		Delete(&models.Attendance{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
 	var attendance []models.Attendance
 	for _, student := range markAttendance.Students {
 		if !student.Present {
@@ -120,7 +128,12 @@ func MarkClassAttendance(c *gin.Context) {
 		})
 	}
 
-	result := db.DB.Clauses(clause.OnConflict{
+	if len(attendance) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "No students marked present"})
+		return
+	}
+
+	result = db.DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "student_id"}, {Name: "class_id"}, {Name: "date"}},
 		UpdateAll: true,
 	}).Create(&attendance)
