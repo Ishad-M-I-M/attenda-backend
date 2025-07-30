@@ -144,3 +144,45 @@ func MarkClassAttendance(c *gin.Context) {
 
 	c.JSON(http.StatusOK, markAttendance)
 }
+
+func GetAttendanceSummary(c *gin.Context) {
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		dateStr = time.Now().Format("2006-01-02")
+	}
+
+	var classes []models.Class
+	if err := db.DB.Find(&classes).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var classSummaries []dtos.ClassSummary
+	var totalStudents, totalPresent int64
+
+	for _, class := range classes {
+		var studentCount int64
+		db.DB.Model(&models.StudentClass{}).Where("class_id = ?", class.ID).Count(&studentCount)
+
+		var presentCount int64
+		db.DB.Model(&models.Attendance{}).Where("class_id = ? AND date = ?", class.ID, dateStr).Count(&presentCount)
+
+		classSummaries = append(classSummaries, dtos.ClassSummary{
+			Class:   class.Name,
+			Total:   studentCount,
+			Present: presentCount,
+		})
+
+		totalStudents += studentCount
+		totalPresent += presentCount
+	}
+
+	response := dtos.AttendanceSummaryResponse{
+		Total:   totalStudents,
+		Present: totalPresent,
+		Date:    dateStr,
+		Classes: classSummaries,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
