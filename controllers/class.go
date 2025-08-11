@@ -5,7 +5,9 @@ import (
 	"attenda_backend/dtos"
 	"attenda_backend/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm/clause"
 	"net/http"
+	"time"
 )
 
 func CreateClass(c *gin.Context) {
@@ -63,7 +65,7 @@ func GetAttendance(c *gin.Context) {
 	}
 
 	var studentclasses []models.StudentClass
-	result = db.DB.Preload("Student").Find(&studentclasses, "class_id = ?", classId)
+	result = db.DB.Preload("Class").Preload("Student").Find(&studentclasses, "class_id = ?", classId)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": result.Error.Error(),
@@ -72,9 +74,10 @@ func GetAttendance(c *gin.Context) {
 	}
 
 	classAttendance := dtos.ClassAttendance{}
-	classAttendance.ClassId = attendance[0].ClassId
-	classAttendance.ClassName = attendance[0].Class.Name
-	classAttendance.Date = attendance[0].Date
+	classAttendance.ClassId = studentclasses[0].ClassId
+	classAttendance.ClassName = studentclasses[0].Class.Name
+	parsedDate, _ := time.Parse("2006-01-02", date)
+	classAttendance.Date = parsedDate
 
 	attendedStudentIds := map[uint]struct{}{}
 	for _, a := range attendance {
@@ -95,4 +98,91 @@ func GetAttendance(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, classAttendance)
+}
+
+func MarkClassAttendance(c *gin.Context) {
+	var markAttendance dtos.ClassAttendance
+
+	if err := c.ShouldBindJSON(&markAttendance); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// delete existing attendance records for the class and date
+	result := db.DB.Where("class_id = ? AND date = ?", markAttendance.ClassId, markAttendance.Date).
+		Delete(&models.Attendance{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	var attendance []models.Attendance
+	for _, student := range markAttendance.Students {
+		if !student.Present {
+			continue
+		}
+		attendance = append(attendance, models.Attendance{
+			StudentId: student.StudentId,
+			ClassId:   markAttendance.ClassId,
+			Date:      markAttendance.Date,
+		})
+	}
+
+	if len(attendance) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "No students marked present"})
+		return
+	}
+
+	result = db.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "student_id"}, {Name: "class_id"}, {Name: "date"}},
+		UpdateAll: true,
+	}).Create(&attendance)
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, markAttendance)
+}
+
+func GetAttendanceSummary(c *gin.Context) {
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		dateStr = time.Now().Format("2006-01-02")
+	}
+
+	var classes []models.Class
+	if err := db.DB.Find(&classes).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var classSummaries []dtos.ClassSummary
+	var totalStudents, totalPresent int64
+
+	for _, class := range classes {
+		var studentCount int64
+		db.DB.Model(&models.StudentClass{}).Where("class_id = ?", class.ID).Count(&studentCount)
+
+		var presentCount int64
+		db.DB.Model(&models.Attendance{}).Where("class_id = ? AND date = ?", class.ID, dateStr).Count(&presentCount)
+
+		classSummaries = append(classSummaries, dtos.ClassSummary{
+			Class:   class.Name,
+			Total:   studentCount,
+			Present: presentCount,
+		})
+
+		totalStudents += studentCount
+		totalPresent += presentCount
+	}
+
+	response := dtos.AttendanceSummaryResponse{
+		Total:   totalStudents,
+		Present: totalPresent,
+		Date:    dateStr,
+		Classes: classSummaries,
+	}
+
+	c.JSON(http.StatusOK, response)
 }

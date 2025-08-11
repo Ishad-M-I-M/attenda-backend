@@ -3,9 +3,9 @@ package dtos
 import "time"
 
 type Student struct {
-	StudentId   uint
-	StudentName string
-	Present     bool
+	StudentId   uint   `json:"student_id"`
+	StudentName string `json:"student_name"`
+	Present     bool   `json:"present"`
 }
 
 type ClassAttendance struct {
